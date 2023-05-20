@@ -1,3 +1,4 @@
+import ast
 from distutils.dir_util import copy_tree
 import logging
 import os
@@ -5,8 +6,9 @@ import platform
 import re
 import shutil
 import subprocess
+import sys
 import tempfile
-from typing import Dict, Optional, Union
+from typing import Any, Dict, Generator, Optional, Union, Tuple
 from urllib.request import urlretrieve
 from zipfile import ZipFile
 
@@ -150,17 +152,58 @@ class Debian:
         self._rename_wrappers()
 
 
+def _linux_read_os_release() -> Generator[Tuple[str, str], Any, None]:
+    """
+    Read all the fields' names and values yielding to a generator.
+
+    Source: https://www.freedesktop.org/software/systemd/man/os-release.html
+
+    Returns: A generator with tuples of (name, value) or none.
+    """
+    try:
+        filename = '/etc/os-release'
+        f = open(filename)
+    except FileNotFoundError:
+        filename = '/usr/lib/os-release'
+        f = open(filename)
+    for line_number, line in enumerate(f, start=1):
+        line = line.rstrip()
+        if not line or line.startswith('#'):
+            continue
+        m = re.match(r'([A-Z][A-Z_0-9]+)=(.*)', line)
+        if m:
+            name, val = m.groups()
+            if val and val[0] in '"\'':
+                val = ast.literal_eval(val)
+            yield name, val
+        else:
+            print(f'{filename}:{line_number}: bad line {line!r}',
+                  file=sys.stderr)
+
+
 def get_installer() -> Union[Windows, Debian]:
+    """
+    Get the proper class depending on the underlying operating system.
+
+    There are a couple supported operating systems, namely Linux
+    and Microsoft Windows. Detecting Windows is straightforward. For Linux, it
+    requires the use of the OS Release file:
+    https://www.freedesktop.org/software/systemd/man/os-release.html
+
+    Returns: The proper class for the supported operating system (e.g., Debian).
+
+    Raises: ``apertium.InstallationNotSupported`` if the system is not supported
+    or none of the Linux distributions is supported.
+    """
     system: str = platform.system()
     if system == 'Windows':
         return Windows()
     elif system == 'Linux':
-        with open('/etc/os-release') as os_release:
-            distro_name = os_release.read()
-        if re.search('[Dd]ebian|[Uu]buntu', distro_name) is not None:
+        os_release = dict(_linux_read_os_release())
+        if os_release['ID'] in ['debian', 'ubuntu']:
             return Debian()
         else:
-            raise apertium.InstallationNotSupported(distro_name)
+            raise apertium.InstallationNotSupported(os_release['ID'])
     else:
         raise apertium.InstallationNotSupported(system)
 

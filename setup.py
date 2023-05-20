@@ -1,7 +1,6 @@
 #!/usr/bin/env python3
 
 from os import path
-import platform
 import re
 from typing import List
 
@@ -17,18 +16,6 @@ def install_binaries() -> None:
     apertium.installer.install_apertium()
     apertium.installer.install_module('eng')
     apertium.installer.install_module('eng-spa')
-
-    def kaz_tat_install():
-        apertium.installer.nightly = False
-        ubuntu = apertium.installer.Debian()
-        if platform.system() == 'Linux':
-            ubuntu._install_package_source()
-        apertium.installer.install_module('kaz-tat')
-        apertium.installer.nightly = True
-        if platform.system() == 'Linux':
-            ubuntu._install_package_source()
-    kaz_tat_install()
-
     apertium.installer.install_wrapper('python3-apertium-core')
     apertium.installer.install_wrapper('python3-apertium-lex-tools')
     apertium.installer.install_wrapper('python3-cg3')
