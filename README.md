@@ -22,7 +22,8 @@
 
 **NOTICE:** 2023-05-16 fork https://github.com/nunoachenriques/apertium-python
 
-**WARNING:** Installation fails when in Python 3.10 or 3.11, i.e., Python > 3.9!
+**WARNING:** Current (https://pypi.org/project/apertium/0.2.3/) installation
+fails when in Python 3.10 or 3.11, i.e., Python > 3.9!
 Moreover, `apertium/installer.py` fails to detect "Debian GNU/Linux 12" as a
 Debian release!
 
@@ -31,6 +32,9 @@ Debian release!
     ```shell
     # pip install apertium
     ```
+
+**FURTHERMORE:** A fix to the `apertium/installer.py` is committed (this fork)
+in order to properly recognise `debian` as an ID in `/etc/os-release`.
 
 ### Developer
 
@@ -58,8 +62,8 @@ when in Python 3.10 or 3.11, i.e., Python > 3.9!
    ```
  - Install `pipenv` in a safe environment (using `pipx`) if it is missing. 
    ```shell
-   sudo apt install pipx
-   pipx ensurepath
+   python3 -m pip install --user pipx
+   python3 -m pipx ensurepath
    pipx install pipenv
    ```
  - Finally, skip the lock file when installing the environment.
